@@ -101,6 +101,7 @@ public final class MainActivity extends Activity implements PetEngine.Host {
     }
     private void settings(LinearLayout body){
         title(body,"MAKE YOURSELF AT HOME","舒服地待在一起","按自己的节奏，安排这份小小陪伴。");
+        Ui.add(body,Ui.button(this,"和泡泡鲸聊聊天 · AI",palette,()->startActivity(new Intent(this,AiChatActivity.class))),48,12);
         LinearLayout name=settingsSection(body);
         Ui.add(name,Ui.text(this,"给这份陪伴起个名字",15,palette.ink,true),-2,16);
         EditText input=new EditText(this);input.setText(store.name());input.setTextColor(palette.ink);input.setSingleLine(true);input.setTextSize(15);input.setHint("泡泡");input.setHintTextColor(palette.muted);input.setPadding(dp(16),dp(12),dp(16),dp(12));input.setBackground(Ui.round(palette.soft,0,16,this));Ui.add(name,input,48,12);
