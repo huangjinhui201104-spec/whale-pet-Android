@@ -32,8 +32,24 @@ public final class AiChatActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("whale_ai_settings", MODE_PRIVATE);
-        if (prefs.getString("base_url", "").isEmpty()) prefs.edit().putString("base_url", "https://api.openai.com/v1").apply();
-        if (prefs.getString("model", "").isEmpty()) prefs.edit().putString("model", "gpt-4o-mini").apply();
+        // Default to Groq's OpenAI-compatible API, which offers a rate-limited free tier.
+        // Migrate the previous built-in OpenAI defaults and clear the old provider key so
+        // users do not accidentally send an OpenAI key to a different provider.
+        String savedBase = prefs.getString("base_url", "").trim().replaceAll("/+$", "");
+        String savedModel = prefs.getString("model", "").trim();
+        if (savedBase.isEmpty() || savedBase.equals("https://api.openai.com/v1")) {
+            SharedPreferences.Editor edit = prefs.edit()
+                .putString("base_url", "https://api.groq.com/openai/v1");
+            if (savedModel.isEmpty() || savedModel.equals("gpt-4o-mini")) {
+                edit.putString("model", "openai/gpt-oss-20b");
+            }
+            if (savedBase.equals("https://api.openai.com/v1")) {
+                edit.remove("api_key");
+            }
+            edit.apply();
+        } else if (savedModel.isEmpty()) {
+            prefs.edit().putString("model", "openai/gpt-oss-20b").apply();
+        }
         buildChat();
     }
 
@@ -102,9 +118,9 @@ public final class AiChatActivity extends Activity {
     }
     private void showSettings() {
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(20),dp(8),dp(20),dp(8));
-        EditText base=field(box,"API Base URL（兼容 OpenAI Chat Completions）",prefs.getString("base_url","https://api.openai.com/v1"),false);
-        EditText model=field(box,"模型名称",prefs.getString("model","gpt-4o-mini"),false);
-        EditText key=field(box,"API Key（仅保存在本机应用私有设置）",prefs.getString("api_key",""),true);
+        EditText base=field(box,"API Base URL（Groq 免费额度 / OpenAI 兼容接口）",prefs.getString("base_url","https://api.groq.com/openai/v1"),false);
+        EditText model=field(box,"模型名称",prefs.getString("model","openai/gpt-oss-20b"),false);
+        EditText key=field(box,"Groq API Key（仅保存在本机应用私有设置）",prefs.getString("api_key",""),true);
         new AlertDialog.Builder(this).setTitle("AI 聊天设置").setView(box).setNegativeButton("取消",null).setPositiveButton("保存",(d,w)->{
             String url=base.getText().toString().trim().replaceAll("/+$","");
             if(!url.startsWith("https://")||model.getText().toString().trim().isEmpty()){status.setText("请填写 HTTPS 地址和模型名称。");return;}
